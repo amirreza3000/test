@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>نمایش موقعیت کاربر</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      background-color: #f5f5f5;
+    }
+    #map {
+      width: 90%;
+      max-width: 600px;
+      height: 400px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      margin-top: 20px;
+    }
+    #info {
+      margin-top: 10px;
+      font-size: 1.1rem;
+    }
+    button {
+      padding: 0.5em 1em;
+      border: none;
+      border-radius: 4px;
+      background-color: #007bff;
+      color: white;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    button:disabled {
+      background-color: #aaa;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <h1>نمایش موقعیت مکانی شما</h1>
+  <button id="btnLocate">دریافت موقعیت</button>
+  <div id="info"></div>
+  <div id="map"></div>
+
+  <script>
+    const btn = document.getElementById('btnLocate');
+    const info = document.getElementById('info');
+    const mapContainer = document.getElementById('map');
+
+    btn.addEventListener('click', () => {
+      if (!navigator.geolocation) {
+        info.textContent = 'مرورگر شما از Geolocation پشتیبانی نمی‌کند.';
+        return;
+      }
+
+      btn.disabled = true;
+      info.textContent = 'در حال دریافت موقعیت...' ;
+
+      navigator.geolocation.getCurrentPosition(
+        position => {
+          const {latitude, longitude, accuracy} = position.coords;
+          info.innerHTML = `عرض جغرافیایی: ${latitude.toFixed(6)}<br>طول جغرافیایی: ${longitude.toFixed(6)}<br>دقت: ${accuracy} متر`;
+
+          // نمایش نقشه با OpenStreetMap
+          const iframe = document.createElement('iframe');
+          iframe.width = '100%';
+          iframe.height = '100%';
+          iframe.style.border = '0';
+          iframe.loading = 'lazy';
+          iframe.referrerPolicy = 'no-referrer-when-downgrade';
+          iframe.src = `https://www.openstreetmap.org/export/embed.html?bbox=${longitude-0.01}%2C${latitude-0.01}%2C${longitude+0.01}%2C${latitude+0.01}&layer=mapnik&marker=${latitude}%2C${longitude}`;
+          mapContainer.innerHTML = '';
+          mapContainer.appendChild(iframe);
+        },
+        error => {
+          switch(error.code) {
+            case error.PERMISSION_DENIED:
+              info.textContent = 'دسترسی به موقعیت رد شد.';
+              break;
+            case error.POSITION_UNAVAILABLE:
+              info.textContent = 'موقعیت در دسترس نیست.';
+              break;
+            case error.TIMEOUT:
+              info.textContent = 'درخواست موقعیت منقضی شد.';
+              break;
+            default:
+              info.textContent = 'خطای ناشناخته‌ای رخ داد.';
+              break;
+          }
+          btn.disabled = false;
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 0
+        }
+      );
+    });
+  </script>
+</body>
+</html>
